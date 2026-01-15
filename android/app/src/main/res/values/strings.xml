@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">DailyFocus</string>
+    <string name="app_name">Boundly</string>
+    <string name="accessibility_service_description">Boundly uses this to detect and block apps that have reached their daily usage limits. This helps you stay focused by preventing access to distracting apps.</string>
 </resources>

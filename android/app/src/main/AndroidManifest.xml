@@ -1,6 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required for UsageStatsManager to read app usage data -->
+    <!-- Note: This is a special permission that must be granted via Settings -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <!-- Required for foreground service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
       android:name=".MainApplication"
@@ -22,6 +29,30 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-      </activity>
-    </application>
+          </activity>
+          
+          <!-- Blocking Service - Monitors apps and enforces limits -->
+          <service
+              android:name=".BlockingService"
+              android:enabled="true"
+              android:exported="false"
+              android:foregroundServiceType="specialUse">
+              <property
+                  android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                  android:value="app_blocking" />
+          </service>
+          
+          <!-- Accessibility Service - Intercepts app launches to prevent blocked apps -->
+          <service
+              android:name=".AppBlockingAccessibilityService"
+              android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+              android:exported="true">
+              <intent-filter>
+                  <action android:name="android.accessibilityservice.AccessibilityService" />
+              </intent-filter>
+              <meta-data
+                  android:name="android.accessibilityservice"
+                  android:resource="@xml/accessibility_service_config" />
+          </service>
+      </application>
 </manifest>

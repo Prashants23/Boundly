@@ -1,97 +1,133 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Daily Focus
 
-# Getting Started
+A privacy-first Android React Native app that helps you limit distracting app usage by setting daily limits and blocking apps when limits are exceeded.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Features
 
-## Step 1: Start Metro
+- ✅ Select apps to track
+- ✅ Set daily usage limits per app
+- ✅ Automatic blocking when limits exceeded
+- ✅ Usage statistics (today vs yesterday)
+- ✅ Dark mode support
+- ✅ Privacy-first (all data stays on device)
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Tech Stack
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **React Native 0.83.1** with New Architecture enabled
+- **TypeScript** for type safety
+- **React Navigation v7** for navigation
+- **Zustand** for state management
+- **MMKV** for fast persistent storage
+- **Native Android Modules** for usage stats and foreground app detection
 
-```sh
-# Using npm
-npm start
+## Project Structure
 
-# OR using Yarn
-yarn start
+```
+src/
+├── features/
+│   ├── appSelection/    # App selection and permissions
+│   ├── limits/          # Setting daily limits
+│   ├── blocking/        # Blocking logic and overlay
+│   └── stats/           # Usage statistics
+├── components/          # Reusable components
+├── navigation/          # Navigation setup
+├── stores/              # Zustand stores
+├── native/              # Native module interfaces
+└── utils/               # Utilities (theme, storage, permissions)
 ```
 
-## Step 2: Build and run your app
+## Setup
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+1. Install dependencies:
+```bash
+npm install
+```
 
-### Android
+2. For Android:
+```bash
+cd android
+./gradlew assembleDebug
+```
 
-```sh
-# Using npm
+3. Run the app:
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+## Permissions
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+The app requires **Usage Stats** permission to function. This is a special permission that must be granted via Android Settings:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+1. Open the app
+2. Follow the permission screen instructions
+3. Navigate to Settings > Apps > Special access > Usage access
+4. Enable "Daily Focus"
 
-```sh
-bundle install
-```
+## Architecture Decisions
 
-Then, and every time you update your native dependencies, run:
+### Why Zustand over Redux?
+- Minimal boilerplate
+- ~1KB bundle size
+- Simple API, easy to understand
+- Perfect for MVP
 
-```sh
-bundle exec pod install
-```
+### Why MMKV over AsyncStorage?
+- 30-50x faster
+- Synchronous API (no async overhead)
+- Thread-safe
+- Perfect for frequent reads/writes
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### Why Native Modules?
+- Direct access to Android UsageStatsManager
+- Better performance than JS-only solutions
+- Battery-efficient (Android handles tracking)
 
-```sh
-# Using npm
-npm run ios
+### Why No Backend?
+- Privacy-first: all data stays on device
+- Simpler architecture
+- No server costs
+- Works offline
 
-# OR using Yarn
-yarn ios
-```
+## Known Limitations
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+1. **Blocking only works when app is open**
+   - The blocking overlay only appears when Daily Focus is running
+   - For true background blocking, a foreground service would be needed
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+2. **Foreground app detection accuracy**
+   - Uses ActivityManager which may not be 100% accurate on all Android versions
+   - Could be improved with UsageStatsManager for detection
 
-## Step 3: Modify your app
+3. **Stats refresh**
+   - Usage stats are refreshed manually (pull-to-refresh)
+   - Not real-time (refreshes when you check)
 
-Now that you have successfully run the app, let's make changes!
+## Development
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+### Adding a New Feature
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+1. Create feature folder in `src/features/`
+2. Add Zustand store if needed (in `src/stores/`)
+3. Add navigation route (in `src/navigation/AppNavigator.tsx`)
+4. Follow existing patterns (TypeScript, functional components, theme support)
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+### Code Style
 
-## Congratulations! :tada:
+- TypeScript strict mode
+- Functional components only
+- Early returns
+- Small, focused functions
+- Self-documenting code
+- No magic numbers
 
-You've successfully run and modified your React Native App. :partying_face:
+## Performance Considerations
 
-### Now what?
+See [PERFORMANCE_AND_COMPLIANCE.md](./PERFORMANCE_AND_COMPLIANCE.md) for detailed performance risks and mitigations.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## Play Store Compliance
 
-# Troubleshooting
+See [PERFORMANCE_AND_COMPLIANCE.md](./PERFORMANCE_AND_COMPLIANCE.md) for Play Store compliance considerations and checklist.
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## License
 
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Private project - All rights reserved

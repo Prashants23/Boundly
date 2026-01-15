@@ -1,4 +1,5 @@
-# Daily Focus
+# Boundly
+Set boundaries. Stay focused.
 
 A privacy-first Android React Native app that helps you limit distracting app usage by setting daily limits and blocking apps when limits are exceeded.
 
@@ -56,12 +57,20 @@ npm run android
 
 ## Permissions
 
-The app requires **Usage Stats** permission to function. This is a special permission that must be granted via Android Settings:
+The app requires **Usage Stats** and **Accessibility** permissions to function. These are special permissions that must be granted via Android Settings:
 
+### Usage Stats Permission
 1. Open the app
 2. Follow the permission screen instructions
 3. Navigate to Settings > Apps > Special access > Usage access
-4. Enable "Daily Focus"
+4. Enable "Boundly"
+
+### Accessibility Service (for app blocking)
+1. After setting app limits, you'll see a prompt on the home screen
+2. Tap "Open Accessibility Settings"
+3. Find "Boundly" in the list
+4. Enable the service
+5. This allows Boundly to intercept and block app launches
 
 ## Architecture Decisions
 
@@ -90,9 +99,9 @@ The app requires **Usage Stats** permission to function. This is a special permi
 
 ## Known Limitations
 
-1. **Blocking only works when app is open**
-   - The blocking overlay only appears when Daily Focus is running
-   - For true background blocking, a foreground service would be needed
+1. **App blocking requires Accessibility Service**
+   - Must be enabled manually in Settings
+   - Some users may find this intrusive (though necessary for blocking)
 
 2. **Foreground app detection accuracy**
    - Uses ActivityManager which may not be 100% accurate on all Android versions
@@ -120,13 +129,10 @@ The app requires **Usage Stats** permission to function. This is a special permi
 - Self-documenting code
 - No magic numbers
 
-## Performance Considerations
+## Documentation
 
-See [PERFORMANCE_AND_COMPLIANCE.md](./PERFORMANCE_AND_COMPLIANCE.md) for detailed performance risks and mitigations.
-
-## Play Store Compliance
-
-See [PERFORMANCE_AND_COMPLIANCE.md](./PERFORMANCE_AND_COMPLIANCE.md) for Play Store compliance considerations and checklist.
+- [App Listing and Blocking Architecture](./APP_LISTING_AND_BLOCKING.md) - Detailed explanation of how app listing and blocking work
+- [Performance and Compliance](./PERFORMANCE_AND_COMPLIANCE.md) - Performance considerations and Play Store compliance
 
 ## License
 

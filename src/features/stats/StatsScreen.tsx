@@ -15,18 +15,16 @@ import React, { useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useTheme } from '../../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppStore } from '../../stores/useAppStore';
 import { useLimitsStore } from '../../stores/useLimitsStore';
 import { useUsageStore } from '../../stores/useUsageStore';
 
 export default function StatsScreen() {
-  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const selectedApps = useAppStore((state) => state.selectedApps);
   const getLimit = useLimitsStore((state) => state.getLimit);
   const { todayUsage, yesterdayUsage, isLoading, refreshUsage, getTimeSaved } =
@@ -58,8 +56,11 @@ export default function StatsScreen() {
 
   if (selectedApps.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <Text className="mt-12 text-center text-base text-text-secondary dark:text-text-secondary">
           No apps selected yet.{'\n'}Select apps to track usage.
         </Text>
       </View>
@@ -72,34 +73,32 @@ export default function StatsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      className="flex-1 bg-bg-primary dark:bg-bg-primary"
+      style={{ paddingTop: insets.top }}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}
           onRefresh={refreshUsage}
-          tintColor={theme.colors.primary}
+          tintColor="#E5C547"
         />
-      }>
-      <View style={styles.content}>
+      }
+    >
+      <View className="p-4">
         {totalTimeSaved > 0 && (
-          <View
-            style={[
-              styles.summaryCard,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            ]}>
-            <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+          <View className="mb-6 items-center rounded-xl border border-border bg-surface p-5 dark:border-border dark:bg-surface">
+            <Text className="mb-2 text-sm text-text-secondary dark:text-text-secondary">
               Time Saved Today
             </Text>
-            <Text style={[styles.summaryValue, { color: theme.colors.success }]}>
+            <Text className="mb-1 text-[32px] font-bold text-status-success">
               {formatTime(totalTimeSaved)}
             </Text>
-            <Text style={[styles.summarySubtext, { color: theme.colors.textSecondary }]}>
+            <Text className="text-xs text-text-secondary dark:text-text-secondary">
               vs yesterday
             </Text>
           </View>
         )}
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <Text className="mb-4 text-xl font-semibold text-text-primary dark:text-text-primary">
           App Usage Today
         </Text>
 
@@ -108,74 +107,72 @@ export default function StatsScreen() {
           const limit = getLimit(app.packageName) || 0;
           const timeSaved = getTimeSaved(app.packageName);
           const yesterday = yesterdayUsage[app.packageName] || 0;
+          const usagePercentage = limit > 0 ? Math.min(100, (usage / limit) * 100) : 0;
+          const isOverLimit = usage >= limit && limit > 0;
+          const isNearLimit = usage >= limit * 0.8 && limit > 0;
 
           return (
             <View
               key={app.packageName}
-              style={[
-                styles.appCard,
-                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-              ]}>
-              <View style={styles.appHeader}>
-                <Text style={[styles.appName, { color: theme.colors.text }]}>
+              className="mb-3 rounded-xl border border-border bg-surface p-4 dark:border-border dark:bg-surface"
+            >
+              <View className="mb-3 flex-row items-center justify-between">
+                <Text className="flex-1 text-lg font-semibold text-text-primary dark:text-text-primary">
                   {app.appName}
                 </Text>
                 {limit > 0 && (
                   <Text
-                    style={[
-                      styles.percentage,
-                      {
-                        color:
-                          usage >= limit
-                            ? theme.colors.error
-                            : usage >= limit * 0.8
-                            ? theme.colors.warning
-                            : theme.colors.textSecondary,
-                      },
-                    ]}>
+                    className={`text-base font-semibold ${
+                      isOverLimit
+                        ? 'text-status-error'
+                        : isNearLimit
+                        ? 'text-status-warning'
+                        : 'text-text-secondary'
+                    }`}
+                  >
                     {formatPercentage(usage, limit)}
                   </Text>
                 )}
               </View>
 
-              <View style={styles.statsRow}>
-                <View style={styles.stat}>
-                  <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+              <View className="mb-3 flex-row justify-around">
+                <View className="flex-1 items-center">
+                  <Text className="mb-1 text-xs text-text-secondary dark:text-text-secondary">
                     Today
                   </Text>
-                  <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                  <Text className="text-base font-semibold text-text-primary dark:text-text-primary">
                     {formatTime(usage)}
                   </Text>
                 </View>
 
                 {yesterday > 0 && (
-                  <View style={styles.stat}>
-                    <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                  <View className="flex-1 items-center">
+                    <Text className="mb-1 text-xs text-text-secondary dark:text-text-secondary">
                       Yesterday
                     </Text>
-                    <Text style={[styles.statValue, { color: theme.colors.textSecondary }]}>
+                    <Text className="text-base font-semibold text-text-secondary dark:text-text-secondary">
                       {formatTime(yesterday)}
                     </Text>
                   </View>
                 )}
 
                 {timeSaved > 0 && (
-                  <View style={styles.stat}>
-                    <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                  <View className="flex-1 items-center">
+                    <Text className="mb-1 text-xs text-text-secondary dark:text-text-secondary">
                       Saved
                     </Text>
-                    <Text style={[styles.statValue, { color: theme.colors.success }]}>
+                    <Text className="text-base font-semibold text-status-success">
                       {formatTime(timeSaved)}
                     </Text>
                   </View>
                 )}
 
                 {limit > 0 && (
-                  <View style={styles.stat}>
-                    <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                  <View className="flex-1 items-center">
+                    <Text className="mb-1 text-xs text-text-secondary dark:text-text-secondary">
                       Limit
                     </Text>
-                    <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                    <Text className="text-base font-semibold text-text-primary dark:text-text-primary">
                       {formatTime(limit)}
                     </Text>
                   </View>
@@ -183,20 +180,16 @@ export default function StatsScreen() {
               </View>
 
               {limit > 0 && (
-                <View style={styles.progressBarContainer}>
+                <View className="h-1 overflow-hidden rounded-full bg-border dark:bg-border">
                   <View
-                    style={[
-                      styles.progressBar,
-                      {
-                        width: `${Math.min(100, (usage / limit) * 100)}%`,
-                        backgroundColor:
-                          usage >= limit
-                            ? theme.colors.error
-                            : usage >= limit * 0.8
-                            ? theme.colors.warning
-                            : theme.colors.primary,
-                      },
-                    ]}
+                    className={`h-full rounded-full ${
+                      isOverLimit
+                        ? 'bg-status-error'
+                        : isNearLimit
+                        ? 'bg-status-warning'
+                        : 'bg-brand-gold'
+                    }`}
+                    style={{ width: `${usagePercentage}%` }}
                   />
                 </View>
               )}
@@ -207,90 +200,3 @@ export default function StatsScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  summaryCard: {
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-  },
-  summaryLabel: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  summaryValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  summarySubtext: {
-    fontSize: 12,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  appCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  appHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  appName: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-  },
-  percentage: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 12,
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressBarContainer: {
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 48,
-  },
-});
-

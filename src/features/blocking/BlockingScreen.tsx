@@ -20,11 +20,9 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Modal,
 } from 'react-native';
-import { useTheme } from '../../utils/theme';
 import type { BlockedApp } from './useBlockingService';
 
 interface BlockingScreenProps {
@@ -36,8 +34,6 @@ export default function BlockingScreen({
   blockedApp,
   onDismiss,
 }: BlockingScreenProps) {
-  const theme = useTheme();
-
   const formatTime = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
     const hours = Math.floor(minutes / 60);
@@ -52,50 +48,53 @@ export default function BlockingScreen({
       visible={true}
       transparent={false}
       animationType="fade"
-      hardwareAccelerated>
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.icon, { color: theme.colors.warning }]}>⏱</Text>
+      hardwareAccelerated
+    >
+      <View className="flex-1 items-center justify-center bg-bg-primary p-6 dark:bg-bg-primary">
+        <View className="w-full max-w-[400px] items-center rounded-2xl bg-surface p-6 shadow-lg dark:bg-surface">
+          <Text className="mb-4 text-6xl">⏱</Text>
           
-          <Text style={[styles.title, { color: theme.colors.text }]}>
+          <Text className="mb-2 text-center text-2xl font-bold text-text-primary dark:text-text-primary">
             Daily Limit Reached
           </Text>
 
-          <Text style={[styles.appName, { color: theme.colors.primary }]}>
+          <Text className="mb-6 text-center text-xl font-semibold text-brand-gold">
             {blockedApp.appName}
           </Text>
 
-          <View style={styles.statsContainer}>
-            <View style={styles.stat}>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+          <View className="mb-6 w-full flex-row justify-around border-y border-border py-4 dark:border-border">
+            <View className="items-center">
+              <Text className="mb-1 text-sm text-text-secondary dark:text-text-secondary">
                 Used Today
               </Text>
-              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+              <Text className="text-lg font-semibold text-text-primary dark:text-text-primary">
                 {formatTime(blockedApp.usageMs)}
               </Text>
             </View>
-            <View style={styles.stat}>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+            <View className="items-center">
+              <Text className="mb-1 text-sm text-text-secondary dark:text-text-secondary">
                 Daily Limit
               </Text>
-              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+              <Text className="text-lg font-semibold text-text-primary dark:text-text-primary">
                 {formatTime(blockedApp.limitMs)}
               </Text>
             </View>
           </View>
 
-          <Text style={[styles.message, { color: theme.colors.textSecondary }]}>
+          <Text className="mb-6 text-center text-base leading-6 text-text-secondary dark:text-text-secondary">
             You've reached your daily limit for this app. Take a break and come back tomorrow.
           </Text>
 
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.colors.primary }]}
+          <Pressable
+            className="mb-4 w-full items-center rounded-lg bg-brand-gold px-8 py-4 active:bg-brand-goldDark"
             onPress={onDismiss}
-            activeOpacity={0.8}>
-            <Text style={styles.buttonText}>Got it</Text>
-          </TouchableOpacity>
+          >
+            <Text className="text-base font-semibold text-bg-primary">
+              Got it
+            </Text>
+          </Pressable>
 
-          <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
+          <Text className="text-center text-xs italic text-text-secondary dark:text-text-secondary">
             Note: This screen will appear again if you try to use this app today.
           </Text>
         </View>
@@ -103,86 +102,3 @@ export default function BlockingScreen({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  icon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  stat: {
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  message: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  note: {
-    fontSize: 12,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-});
-

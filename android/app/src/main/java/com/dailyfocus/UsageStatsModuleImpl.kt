@@ -181,7 +181,10 @@ class UsageStatsModuleImpl(reactContext: ReactApplicationContext) :
                 // Fallback: Get all installed apps when usage stats is empty
                 // This allows users to select apps even if they haven't been used yet
                 val packageManager = getPackageManager()
-                val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                // Include disabled apps in the query (some apps might be disabled but still installed)
+                val installedApps = packageManager.getInstalledApplications(
+                    PackageManager.GET_META_DATA or PackageManager.MATCH_DISABLED_COMPONENTS.toInt()
+                )
                 val result = WritableNativeArray()
                 var processedCount = 0
                 var skippedSystemCount = 0
@@ -197,19 +200,66 @@ class UsageStatsModuleImpl(reactContext: ReactApplicationContext) :
                         continue
                     }
                     
-                    // Only include apps that have a launcher activity (user can launch them)
-                    // This ensures we only show apps that users can actually interact with
+                    // Check if it's a user-installed app (not a system app)
+                    val isUserInstalled = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) ||
+                                         (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP != 0)
+                    
+                    // Check if app has a launcher activity (user can launch it)
+                    // Try multiple methods for better detection
                     val hasLauncher = try {
-                        val intent = packageManager.getLaunchIntentForPackage(packageName)
-                        intent != null
+                        // Method 1: Check for launch intent
+                        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                        if (launchIntent != null) {
+                            true
+                        } else {
+                            // Method 2: Check if app has MAIN/LAUNCHER activity category
+                            try {
+                                val intent = Intent(Intent.ACTION_MAIN)
+                                intent.addCategory(Intent.CATEGORY_LAUNCHER)
+                                intent.setPackage(packageName)
+                                val resolveInfo = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                                resolveInfo.isNotEmpty()
+                            } catch (e: Exception) {
+                                false
+                            }
+                        }
                     } catch (e: Exception) {
+                        android.util.Log.v("UsageStatsModule", "Fallback: Error checking launcher for $packageName: ${e.message}")
                         false
                     }
 
-                    // Skip apps without launcher (system services, etc.)
-                    if (!hasLauncher) {
+                    // Include if: user-installed OR has launcher
+                    // Play Store apps are always user-installed (FLAG_SYSTEM == 0)
+                    // Also include apps with launchers even if marked as system (edge cases)
+                    if (!isUserInstalled && !hasLauncher) {
                         skippedSystemCount++
+                        // Log what we're skipping for debugging popular apps
+                        if (packageName.contains("instagram") || 
+                            packageName.contains("whatsapp") || 
+                            packageName.contains("facebook") ||
+                            packageName.contains("twitter") ||
+                            packageName.contains("youtube") ||
+                            packageName.contains("chrome") ||
+                            packageName.contains("gmail") ||
+                            packageName.contains("pay")) {
+                            android.util.Log.w("UsageStatsModule", "Fallback: Skipping popular app: $packageName, isUserInstalled: $isUserInstalled, hasLauncher: $hasLauncher, flags: ${appInfo.flags}")
+                        }
                         continue
+                    }
+                    
+                    // Log popular apps for debugging (both included and excluded)
+                    if (packageName.contains("instagram") || 
+                        packageName.contains("whatsapp") || 
+                        packageName.contains("com.whatsapp") ||
+                        packageName.contains("com.instagram") ||
+                        packageName.contains("facebook") ||
+                        packageName.contains("twitter") ||
+                        packageName.contains("youtube") ||
+                        packageName.contains("chrome") ||
+                        packageName.contains("gmail") ||
+                        packageName.contains("pay") ||
+                        packageName.contains("bank")) {
+                        android.util.Log.d("UsageStatsModule", "Fallback: Processing popular app: $packageName, isUserInstalled: $isUserInstalled, hasLauncher: $hasLauncher, flags: ${appInfo.flags}")
                     }
                     
                     try {
@@ -330,8 +380,10 @@ class UsageStatsModuleImpl(reactContext: ReactApplicationContext) :
             android.util.Log.d("UsageStatsModule", "Now checking installed apps for any not in usage stats...")
 
             // Then, add installed apps that aren't in usage stats (haven't been used yet)
-            // Only include apps with launcher activities (user can launch them)
-            val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+            // Include disabled apps too (some might be disabled but still installed)
+            val installedApps = packageManager.getInstalledApplications(
+                PackageManager.GET_META_DATA or PackageManager.MATCH_DISABLED_COMPONENTS.toInt()
+            )
             var addedFromInstalled = 0
 
             android.util.Log.d("UsageStatsModule", "Checking ${installedApps.size} installed apps for apps not in usage stats...")
@@ -348,11 +400,27 @@ class UsageStatsModuleImpl(reactContext: ReactApplicationContext) :
                 val isUserInstalled = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) ||
                                      (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP != 0)
                 
-                // Check if app has a launcher activity
+                // Check if app has a launcher activity (user can launch it)
+                // Try multiple methods for better detection
                 val hasLauncher = try {
-                    val intent = packageManager.getLaunchIntentForPackage(packageName)
-                    intent != null
+                    // Method 1: Check for launch intent
+                    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                    if (launchIntent != null) {
+                        true
+                    } else {
+                        // Method 2: Check if app has MAIN/LAUNCHER activity category
+                        try {
+                            val intent = Intent(Intent.ACTION_MAIN)
+                            intent.addCategory(Intent.CATEGORY_LAUNCHER)
+                            intent.setPackage(packageName)
+                            val resolveInfo = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                            resolveInfo.isNotEmpty()
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
                 } catch (e: Exception) {
+                    android.util.Log.v("UsageStatsModule", "Error checking launcher for $packageName: ${e.message}")
                     false
                 }
 

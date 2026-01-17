@@ -8,10 +8,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
+import { View, Text, Pressable, AppState } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTheme } from '../../utils/theme';
 import { checkUsageStatsPermission } from '../../utils/permissions';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAppStore } from '../../stores/useAppStore';
@@ -21,28 +21,25 @@ import { useBlockingService } from '../blocking/useBlockingService';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
-  const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const [isChecking, setIsChecking] = useState(true);
   const selectedApps = useAppStore((state) => state.selectedApps);
   const limits = useLimitsStore((state) => state.limits);
   const { isAccessibilityEnabled, checkAccessibilityStatus, openAccessibilitySettings } = useBlockingService();
 
-  // Check permission when screen is focused (user might have granted it)
   useEffect(() => {
     checkPermissionAndNavigate();
   }, []);
 
-  // Also check when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       checkPermissionAndNavigate();
-      checkAccessibilityStatus(); // Check accessibility when screen is focused
+      checkAccessibilityStatus();
     });
     return unsubscribe;
   }, [navigation, checkAccessibilityStatus]);
 
-  // Check accessibility when app comes to foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
@@ -56,7 +53,6 @@ export default function HomeScreen() {
     try {
       const hasPermission = await checkUsageStatsPermission();
       if (!hasPermission) {
-        // Navigate to permissions screen
         navigation.replace('Permissions', {
           returnTo: 'Home',
         });
@@ -70,8 +66,11 @@ export default function HomeScreen() {
 
   if (isChecking) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary p-6 dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <Text className="text-base text-text-secondary dark:text-text-secondary">
           Loading...
         </Text>
       </View>
@@ -85,155 +84,79 @@ export default function HomeScreen() {
   const needsAccessibility = activeAppsCount > 0 && !isAccessibilityEnabled;
 
   return (
-    <>
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Boundly
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          {activeAppsCount > 0
-            ? `${activeAppsCount} app${activeAppsCount !== 1 ? 's' : ''} being tracked`
-            : 'Select apps and set limits to get started'}
-        </Text>
+    <View 
+      className="flex-1 items-center justify-center bg-bg-primary p-6 dark:bg-bg-primary"
+      style={{ paddingTop: insets.top }}
+    >
+      <Text className="mb-2 text-[32px] font-bold text-text-primary dark:text-text-primary">
+        Boundly
+      </Text>
+      <Text className="mb-8 text-center text-base text-text-secondary dark:text-text-secondary">
+        {activeAppsCount > 0
+          ? `${activeAppsCount} app${activeAppsCount !== 1 ? 's' : ''} being tracked`
+          : 'Select apps and set limits to get started'}
+      </Text>
 
-        {needsAccessibility && (
-          <View style={[styles.warningContainer, { backgroundColor: theme.colors.surface, borderColor: '#FFA500' }]}>
-            <Text style={[styles.warningTitle, { color: theme.colors.text }]}>
-              ⚠️ Enable App Blocking
+      {needsAccessibility && (
+        <View className="mb-6 w-full max-w-[300px] rounded-xl border-2 border-status-warning bg-surface p-4 dark:bg-surface">
+          <Text className="mb-2 text-lg font-bold text-text-primary dark:text-text-primary">
+            ⚠️ Enable App Blocking
+          </Text>
+          <Text className="mb-1 text-sm leading-5 text-text-secondary dark:text-text-secondary">
+            To prevent blocked apps from launching, you need to enable the Accessibility Service.
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-text-secondary dark:text-text-secondary">
+            Tap the button below, then find "Boundly" and enable it.
+          </Text>
+          <Pressable
+            className="mt-3 items-center rounded-lg bg-brand-gold px-6 py-3 active:bg-brand-goldDark"
+            onPress={openAccessibilitySettings}
+          >
+            <Text className="text-sm font-semibold text-bg-primary">
+              Open Accessibility Settings
             </Text>
-            <Text style={[styles.warningText, { color: theme.colors.textSecondary }]}>
-              To prevent blocked apps from launching, you need to enable the Accessibility Service.
+          </Pressable>
+          <Pressable
+            className="mt-2 items-center py-2"
+            onPress={checkAccessibilityStatus}
+          >
+            <Text className="text-xs font-medium text-brand-gold">
+              I've enabled it
             </Text>
-            <Text style={[styles.warningText, { color: theme.colors.textSecondary, marginTop: 8 }]}>
-              Tap the button below, then find "Boundly" and enable it.
+          </Pressable>
+        </View>
+      )}
+
+      <View className="w-full max-w-[300px] gap-3">
+        <Pressable
+          className="items-center rounded-lg bg-brand-gold px-8 py-4 active:bg-brand-goldDark"
+          onPress={() => navigation.navigate('AppSelection')}
+        >
+          <Text className="text-base font-semibold text-bg-primary">
+            Select Apps
+          </Text>
+        </Pressable>
+
+        {selectedApps.length > 0 && (
+          <Pressable
+            className="items-center rounded-lg border border-border bg-surface px-8 py-4 active:bg-surface-hover dark:border-border dark:bg-surface"
+            onPress={() => navigation.navigate('Limits')}
+          >
+            <Text className="text-base font-semibold text-text-primary dark:text-text-primary">
+              Set Limits
             </Text>
-            <TouchableOpacity
-              style={[styles.warningButton, { backgroundColor: theme.colors.primary }]}
-              onPress={openAccessibilitySettings}
-              activeOpacity={0.8}>
-              <Text style={styles.warningButtonText}>Open Accessibility Settings</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.checkButton}
-              onPress={checkAccessibilityStatus}
-              activeOpacity={0.6}>
-              <Text style={[styles.checkButtonText, { color: theme.colors.primary }]}>
-                I've enabled it
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </Pressable>
         )}
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.navigate('AppSelection')}
-            activeOpacity={0.8}>
-            <Text style={styles.buttonText}>Select Apps</Text>
-          </TouchableOpacity>
-
-          {selectedApps.length > 0 && (
-            <TouchableOpacity
-              style={[
-                styles.button,
-                { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
-              ]}
-              onPress={() => navigation.navigate('Limits')}
-              activeOpacity={0.8}>
-              <Text style={[styles.buttonText, { color: theme.colors.text }]}>
-                Set Limits
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
-            ]}
-            onPress={() => navigation.navigate('Stats')}
-            activeOpacity={0.8}>
-            <Text style={[styles.buttonText, { color: theme.colors.text }]}>
-              View Stats
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Pressable
+          className="items-center rounded-lg border border-border bg-surface px-8 py-4 active:bg-surface-hover dark:border-border dark:bg-surface"
+          onPress={() => navigation.navigate('Stats')}
+        >
+          <Text className="text-base font-semibold text-text-primary dark:text-text-primary">
+            View Stats
+          </Text>
+        </Pressable>
       </View>
-    </>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 300,
-    gap: 12,
-  },
-  button: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  warningContainer: {
-    width: '100%',
-    maxWidth: 300,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    marginBottom: 24,
-  },
-  warningTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  warningText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  warningButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  warningButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  checkButton: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  checkButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-});
-

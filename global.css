@@ -1,0 +1,296 @@
+/**
+ * Boundly Design System - Global Styles
+ * 
+ * This file contains CSS custom properties (variables) for the design system.
+ * NativeWind uses these for consistent theming across the app.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   CSS CUSTOM PROPERTIES - ROOT (DARK MODE DEFAULT)
+   ============================================ */
+:root {
+  /* Brand Colors */
+  --color-brand-gold: #E5C547;
+  --color-brand-gold-light: #F0D76B;
+  --color-brand-gold-dark: #C9A92D;
+  --color-brand-gold-muted: rgba(229, 197, 71, 0.15);
+
+  /* Background Colors - Dark Theme (Default) */
+  --color-bg-primary: #0A0A0A;
+  --color-bg-secondary: #121212;
+  --color-bg-tertiary: #1A1A1A;
+  --color-bg-elevated: #1E1E1E;
+
+  /* Text Colors - Dark Theme */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B0B0B0;
+  --color-text-tertiary: #6B6B6B;
+  --color-text-muted: #4A4A4A;
+
+  /* Border Colors - Dark Theme */
+  --color-border: #2A2A2A;
+  --color-border-light: #3A3A3A;
+  --color-border-strong: #4A4A4A;
+
+  /* Surface Colors - Dark Theme */
+  --color-surface: #1A1A1A;
+  --color-surface-hover: #252525;
+  --color-surface-pressed: #0F0F0F;
+  --color-surface-disabled: #151515;
+
+  /* Status Colors */
+  --color-success: #4ADE80;
+  --color-success-bg: #1A3A1A;
+  --color-error: #EF5350;
+  --color-error-bg: #3A1A1A;
+  --color-warning: #FFB74D;
+  --color-warning-bg: #3A2A1A;
+  --color-info: #64B5F6;
+  --color-info-bg: #1A2A3A;
+
+  /* Typography */
+  --font-display: 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --font-sans: 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow-gold: 0 0 20px rgba(229, 197, 71, 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 400ms;
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+.light {
+  /* Background Colors - Light Theme */
+  --color-bg-primary: #FAFAFA;
+  --color-bg-secondary: #F5F5F5;
+  --color-bg-tertiary: #FFFFFF;
+  --color-bg-elevated: #EBEBEB;
+
+  /* Text Colors - Light Theme */
+  --color-text-primary: #0A0A0A;
+  --color-text-secondary: #555555;
+  --color-text-tertiary: #888888;
+  --color-text-muted: #AAAAAA;
+
+  /* Border Colors - Light Theme */
+  --color-border: #E0E0E0;
+  --color-border-light: #EBEBEB;
+  --color-border-strong: #CCCCCC;
+
+  /* Surface Colors - Light Theme */
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F5F5F5;
+  --color-surface-pressed: #EBEBEB;
+  --color-surface-disabled: #FAFAFA;
+
+  /* Status Colors - Light Theme (same semantic colors, different backgrounds) */
+  --color-success-bg: #E8F5E9;
+  --color-error-bg: #FFEBEE;
+  --color-warning-bg: #FFF3E0;
+  --color-info-bg: #E3F2FD;
+
+  /* Shadows - Light Theme */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.15);
+  --shadow-glow-gold: 0 0 20px rgba(229, 197, 71, 0.2);
+}
+
+/* ============================================
+   BASE LAYER - RESET & DEFAULTS
+   ============================================ */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+/* ============================================
+   COMPONENT LAYER - REUSABLE PATTERNS
+   ============================================ */
+@layer components {
+  /* Card Component */
+  .card {
+    @apply bg-surface rounded-card p-4;
+  }
+
+  .card-elevated {
+    @apply bg-surface rounded-card p-4 shadow-card;
+  }
+
+  /* Button Components */
+  .btn {
+    @apply px-6 py-3 rounded-button font-semibold transition-all duration-fast;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-gold text-bg-primary;
+  }
+
+  .btn-primary:active {
+    @apply bg-brand-goldDark;
+  }
+
+  .btn-secondary {
+    @apply btn bg-transparent border-2 border-brand-gold text-brand-gold;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-text-primary;
+  }
+
+  /* Input Components */
+  .input {
+    @apply bg-bg-tertiary text-text-primary px-4 py-3 rounded-input border border-border;
+    @apply placeholder:text-text-muted;
+  }
+
+  .input:focus {
+    @apply border-brand-gold outline-none;
+  }
+
+  /* Badge Components */
+  .badge {
+    @apply inline-flex items-center px-2 py-1 rounded-badge text-label-sm;
+  }
+
+  .badge-success {
+    @apply badge bg-status-successBg text-status-success;
+  }
+
+  .badge-error {
+    @apply badge bg-status-errorBg text-status-error;
+  }
+
+  .badge-warning {
+    @apply badge bg-status-warningBg text-status-warning;
+  }
+
+  /* Stat Display */
+  .stat-value {
+    @apply font-mono text-display-md font-bold text-brand-gold;
+  }
+
+  .stat-label {
+    @apply text-body-sm text-text-secondary;
+  }
+}
+
+/* ============================================
+   UTILITIES LAYER - CUSTOM UTILITIES
+   ============================================ */
+@layer utilities {
+  /* Text Gradient */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #E5C547 0%, #F0D76B 50%, #C9A92D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass Effect */
+  .glass {
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Safe Area Utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Hide Scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Aspect Ratios */
+  .aspect-card {
+    aspect-ratio: 1 / 1.1;
+  }
+
+  .aspect-banner {
+    aspect-ratio: 16 / 9;
+  }
+
+  /* Line Clamp */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
+

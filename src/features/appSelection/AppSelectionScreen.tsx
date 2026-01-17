@@ -10,24 +10,23 @@
  * - Minimal, clean interface
  */
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Switch,
   AppState,
   TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTheme } from '../../utils/theme';
 import { useAppStore } from '../../stores/useAppStore';
 import { useUsageStore } from '../../stores/useUsageStore';
-import { checkUsageStatsPermission, openUsageStatsSettings } from '../../utils/permissions';
+import { checkUsageStatsPermission } from '../../utils/permissions';
 import UsageStatsModule from '../../native/UsageStatsModule';
 import type { UsageStat } from '../../native/UsageStatsModule';
 import type { RootStackParamList } from '../../navigation/AppNavigator';
@@ -35,8 +34,8 @@ import type { RootStackParamList } from '../../navigation/AppNavigator';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AppSelectionScreen() {
-  const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const [apps, setApps] = useState<UsageStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
@@ -49,7 +48,6 @@ export default function AppSelectionScreen() {
   const isSelected = useAppStore((state) => state.isSelected);
   const refreshUsage = useUsageStore((state) => state.refreshUsage);
 
-  // Check permission when screen is focused (but only once, not on every focus)
   const hasCheckedOnFocus = React.useRef(false);
   
   useFocusEffect(
@@ -61,11 +59,9 @@ export default function AppSelectionScreen() {
     }, []),
   );
 
-  // Also listen for app state changes (user might have granted permission)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        console.log('AppSelectionScreen: App became active, rechecking permission...');
         checkPermissionAndLoad();
       }
     });
@@ -76,14 +72,10 @@ export default function AppSelectionScreen() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('AppSelectionScreen: Checking permission...');
       const permissionGranted = await checkUsageStatsPermission();
-      console.log('AppSelectionScreen: Permission granted:', permissionGranted);
       setHasPermission(permissionGranted);
       
       if (!permissionGranted) {
-        // Redirect to permissions screen
-        console.log('AppSelectionScreen: Permission not granted, redirecting to Permissions screen');
         setIsLoading(false);
         navigation.replace('Permissions', {
           returnTo: 'AppSelection',
@@ -91,30 +83,22 @@ export default function AppSelectionScreen() {
         return;
       }
       
-      // Permission granted, load apps
-      console.log('AppSelectionScreen: Permission granted, loading apps...');
       await loadApps();
     } catch (error) {
-      console.error('AppSelectionScreen: Error checking permission:', error);
       setError('Failed to check permissions. Please try again.');
       setIsLoading(false);
     }
   };
 
   const handleRetry = async () => {
-    console.log('AppSelectionScreen: Retry button pressed');
     setIsLoading(true);
     setError(null);
     
-    // First check permission again
     try {
       const permissionGranted = await checkUsageStatsPermission();
-      console.log('AppSelectionScreen: Retry - Permission granted:', permissionGranted);
       setHasPermission(permissionGranted);
       
       if (!permissionGranted) {
-        // Redirect to permissions screen
-        console.log('AppSelectionScreen: Retry - Permission not granted, redirecting to Permissions');
         setIsLoading(false);
         navigation.replace('Permissions', {
           returnTo: 'AppSelection',
@@ -122,11 +106,8 @@ export default function AppSelectionScreen() {
         return;
       }
       
-      // Permission is granted, retry loading apps
-      console.log('AppSelectionScreen: Retry - Permission granted, reloading apps...');
       await loadApps();
     } catch (error) {
-      console.error('AppSelectionScreen: Retry - Error:', error);
       setError('Failed to retry. Please check permissions and try again.');
       setIsLoading(false);
     }
@@ -142,43 +123,32 @@ export default function AppSelectionScreen() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('AppSelectionScreen: Loading apps...');
       if (!UsageStatsModule) {
-        console.error('AppSelectionScreen: UsageStatsModule is not available');
         throw new Error('UsageStatsModule is not available');
       }
 
-      console.log('AppSelectionScreen: Calling getTodayUsageStats...');
       const stats = await UsageStatsModule.getTodayUsageStats();
-      console.log('AppSelectionScreen: Received stats:', stats?.length || 0, 'apps');
       
       if (!stats || stats.length === 0) {
-        console.log('AppSelectionScreen: No apps returned from native module');
-        console.log('AppSelectionScreen: This is normal if permission was just granted');
-        console.log('AppSelectionScreen: Android needs time to collect usage data');
         setError(
           'No usage data found yet.\n\n' +
           'This is normal if you just granted permission. Android needs a few minutes to collect usage data.\n\n' +
           'Try:\n' +
           '• Wait 2-3 minutes, then tap Retry\n' +
           '• Open and use some apps, then come back\n' +
-                  '• Make sure "Boundly" is enabled in Settings > Apps > Special access > Usage access'
+          '• Make sure "Boundly" is enabled in Settings > Apps > Special access > Usage access'
         );
         setApps([]);
         setIsLoading(false);
         return;
       }
 
-      // Sort by usage (most used first)
       const sorted = stats.sort(
         (a, b) => b.totalTimeInForeground - a.totalTimeInForeground,
       );
-      console.log('AppSelectionScreen: Setting apps, count:', sorted.length);
       setApps(sorted);
       await refreshUsage();
-      console.log('AppSelectionScreen: Apps loaded successfully');
     } catch (error) {
-      console.error('AppSelectionScreen: Error loading apps:', error);
       setError(
         error instanceof Error
           ? error.message
@@ -210,7 +180,6 @@ export default function AppSelectionScreen() {
     }
   };
 
-  // Filter apps based on search query
   const filteredApps = useMemo(() => {
     if (!searchQuery.trim()) {
       return apps;
@@ -225,17 +194,23 @@ export default function AppSelectionScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <ActivityIndicator size="large" color="#E5C547" />
       </View>
     );
   }
 
   if (!hasPermission) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <ActivityIndicator size="large" color="#E5C547" />
+        <Text className="mt-4 text-base text-text-secondary dark:text-text-secondary">
           Checking permissions...
         </Text>
       </View>
@@ -244,62 +219,61 @@ export default function AppSelectionScreen() {
 
   if (apps.length === 0 && !isLoading && hasPermission) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary p-4 dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <Text className="mt-12 text-center text-base text-text-secondary dark:text-text-secondary">
           {error || 'No apps found.'}
           {'\n\n'}
           If you just granted permission, wait a few minutes for Android to collect usage data, then try again.
         </Text>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: theme.colors.primary, marginTop: 16 }]}
+        <Pressable
+          className="mt-4 items-center rounded-lg bg-brand-gold px-6 py-3 active:bg-brand-goldDark"
           onPress={handleRetry}
-          activeOpacity={0.8}>
-          <Text style={styles.buttonText}>Retry</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, marginTop: 12 }]}
+        >
+          <Text className="text-base font-semibold text-bg-primary">Retry</Text>
+        </Pressable>
+        <Pressable
+          className="mt-3 items-center rounded-lg border border-border bg-surface px-6 py-3 dark:border-border dark:bg-surface"
           onPress={async () => {
-            console.log('AppSelectionScreen: Open Settings button pressed');
             try {
               if (!UsageStatsModule) {
                 throw new Error('UsageStatsModule not available');
               }
-              console.log('AppSelectionScreen: Calling openUsageStatsSettings...');
               await UsageStatsModule.openUsageStatsSettings();
-              console.log('AppSelectionScreen: Settings should be open now');
-              // Settings should now be open - user will grant permission there
-              // When they come back, AppState listener will detect it
             } catch (error) {
-              console.error('AppSelectionScreen: Error opening settings:', error);
-              // Fallback: navigate to permissions screen which has better instructions
               navigation.replace('Permissions', {
                 returnTo: 'AppSelection',
               });
             }
           }}
-          activeOpacity={0.8}>
-          <Text style={[styles.buttonText, { color: theme.colors.text }]}>
+        >
+          <Text className="text-base font-semibold text-text-primary dark:text-text-primary">
             Open Settings
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
+    <View 
+      className="flex-1 bg-bg-primary p-4 dark:bg-bg-primary"
+      style={{ paddingTop: insets.top + 16 }}
+    >
+      <Text className="mb-1 text-2xl font-bold text-text-primary dark:text-text-primary">
         Select Apps to Track
       </Text>
-      <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+      <Text className="mb-4 text-sm text-text-secondary dark:text-text-secondary">
         {selectedApps.length} app{selectedApps.length !== 1 ? 's' : ''} selected
       </Text>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+      <View className="mb-4 overflow-hidden rounded-xl border border-border bg-surface dark:border-border dark:bg-surface">
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          className="px-4 py-3 text-base text-text-primary dark:text-text-primary"
           placeholder="Search apps..."
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor="#6B6B6B"
           value={searchQuery}
           onChangeText={setSearchQuery}
           autoCapitalize="none"
@@ -309,8 +283,8 @@ export default function AppSelectionScreen() {
       </View>
 
       {filteredApps.length === 0 && searchQuery.trim() ? (
-        <View style={styles.emptySearchContainer}>
-          <Text style={[styles.emptySearchText, { color: theme.colors.textSecondary }]}>
+        <View className="flex-1 items-center justify-center py-12">
+          <Text className="text-center text-base text-text-secondary dark:text-text-secondary">
             No apps found matching "{searchQuery}"
           </Text>
         </View>
@@ -319,116 +293,33 @@ export default function AppSelectionScreen() {
           data={filteredApps}
           keyExtractor={(item) => item.packageName}
           renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.appItem,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
-            ]}
-            onPress={() => handleToggle(item)}
-            activeOpacity={0.7}>
-            <View style={styles.appInfo}>
-              <Text style={[styles.appName, { color: theme.colors.text }]}>
-                {item.appName}
-              </Text>
-              <Text style={[styles.appUsage, { color: theme.colors.textSecondary }]}>
-                {formatTime(item.totalTimeInForeground)} today
-              </Text>
-            </View>
-            <Switch
-              value={isSelected(item.packageName)}
-              onValueChange={() => handleToggle(item)}
-              trackColor={{
-                false: theme.colors.border,
-                true: theme.colors.primary,
-              }}
-              thumbColor="#FFFFFF"
-            />
-          </TouchableOpacity>
-        )}
-          contentContainerStyle={styles.listContent}
+            <Pressable
+              className="mb-2 flex-row items-center justify-between rounded-xl border border-border bg-surface p-4 active:bg-surface-hover dark:border-border dark:bg-surface"
+              onPress={() => handleToggle(item)}
+            >
+              <View className="mr-4 flex-1">
+                <Text className="mb-1 text-base font-semibold text-text-primary dark:text-text-primary">
+                  {item.appName}
+                </Text>
+                <Text className="text-sm text-text-secondary dark:text-text-secondary">
+                  {formatTime(item.totalTimeInForeground)} today
+                </Text>
+              </View>
+              <Switch
+                value={isSelected(item.packageName)}
+                onValueChange={() => handleToggle(item)}
+                trackColor={{
+                  false: '#2A2A2A',
+                  true: '#E5C547',
+                }}
+                thumbColor="#FFFFFF"
+              />
+            </Pressable>
+          )}
+          contentContainerStyle={{ paddingBottom: 16 }}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  searchContainer: {
-    marginBottom: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  searchInput: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  emptySearchContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptySearchText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  appItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  appInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  appUsage: {
-    fontSize: 14,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 48,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
-

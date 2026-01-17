@@ -14,12 +14,11 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   TextInput,
 } from 'react-native';
-import { useTheme } from '../../utils/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppStore, type SelectedApp } from '../../stores/useAppStore';
 import { useLimitsStore } from '../../stores/useLimitsStore';
 import { useUsageStore } from '../../stores/useUsageStore';
@@ -39,12 +38,10 @@ const formatTime = (ms: number): string => {
 
 /**
  * Parse time input string to milliseconds
- * Supports formats like "1h 30m", "90m", "1.5h", "120"
  */
 const parseTimeInput = (input: string): number | null => {
   const trimmed = input.trim().toLowerCase();
   
-  // Try "Xh Ym" format
   const hourMinMatch = trimmed.match(/(\d+)h\s*(\d+)m?/);
   if (hourMinMatch) {
     const hours = parseInt(hourMinMatch[1], 10);
@@ -52,21 +49,18 @@ const parseTimeInput = (input: string): number | null => {
     return (hours * 60 + minutes) * 60000;
   }
 
-  // Try "Xh" format
   const hourMatch = trimmed.match(/(\d+(?:\.\d+)?)h/);
   if (hourMatch) {
     const hours = parseFloat(hourMatch[1]);
     return hours * 60 * 60000;
   }
 
-  // Try "Xm" format
   const minMatch = trimmed.match(/(\d+(?:\.\d+)?)m/);
   if (minMatch) {
     const minutes = parseFloat(minMatch[1]);
     return minutes * 60000;
   }
 
-  // Try just number (assume minutes)
   const numMatch = trimmed.match(/^\d+$/);
   if (numMatch) {
     const minutes = parseInt(numMatch[0], 10);
@@ -84,10 +78,8 @@ interface LimitItemProps {
 }
 
 function LimitItem({ app, limit, usage, onLimitChange }: LimitItemProps) {
-  const theme = useTheme();
   const [inputValue, setInputValue] = useState(limit ? formatTime(limit) : '');
 
-  // Update input value when limit changes externally
   useEffect(() => {
     if (limit) {
       setInputValue(formatTime(limit));
@@ -106,53 +98,40 @@ function LimitItem({ app, limit, usage, onLimitChange }: LimitItemProps) {
   };
 
   return (
-    <View
-      style={[
-        styles.limitItem,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-        },
-      ]}>
-      <View style={styles.appInfo}>
-        <Text style={[styles.appName, { color: theme.colors.text }]}>
+    <View className="mb-3 rounded-xl border border-border bg-surface p-4 dark:border-border dark:bg-surface">
+      <View className="mb-3">
+        <Text className="mb-1 text-base font-semibold text-text-primary dark:text-text-primary">
           {app.appName}
         </Text>
         {usage > 0 && (
-          <Text style={[styles.usageText, { color: theme.colors.textSecondary }]}>
+          <Text className="text-sm text-text-secondary dark:text-text-secondary">
             Used: {formatTime(usage)} today
           </Text>
         )}
       </View>
 
-      <View style={styles.inputContainer}>
+      <View className="flex-row items-center gap-2">
         <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.colors.background,
-              color: theme.colors.text,
-              borderColor: theme.colors.border,
-            },
-          ]}
+          className="flex-1 rounded-lg border border-border bg-bg-primary p-3 text-base text-text-primary dark:border-border dark:bg-bg-primary dark:text-text-primary"
           value={inputValue}
           onChangeText={setInputValue}
           placeholder="e.g., 1h 30m"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor="#6B6B6B"
           onSubmitEditing={handleSave}
           onBlur={handleSave}
         />
         {limit && limit > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
+          <Pressable
+            className="p-3"
             onPress={() => {
               setInputValue('');
               onLimitChange(app.packageName, null);
-            }}>
-            <Text style={[styles.clearButtonText, { color: theme.colors.error }]}>
+            }}
+          >
+            <Text className="text-sm font-medium text-status-error">
               Clear
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
     </View>
@@ -160,7 +139,7 @@ function LimitItem({ app, limit, usage, onLimitChange }: LimitItemProps) {
 }
 
 export default function LimitsScreen() {
-  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const selectedApps = useAppStore((state) => state.selectedApps);
   const getLimit = useLimitsStore((state) => state.getLimit);
   const setLimit = useLimitsStore((state) => state.setLimit);
@@ -177,8 +156,11 @@ export default function LimitsScreen() {
 
   if (selectedApps.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+      <View 
+        className="flex-1 items-center justify-center bg-bg-primary dark:bg-bg-primary"
+        style={{ paddingTop: insets.top }}
+      >
+        <Text className="mt-12 text-center text-base text-text-secondary dark:text-text-secondary">
           No apps selected.{'\n'}Select apps first to set limits.
         </Text>
       </View>
@@ -186,11 +168,14 @@ export default function LimitsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
+    <View 
+      className="flex-1 bg-bg-primary p-4 dark:bg-bg-primary"
+      style={{ paddingTop: insets.top + 16 }}
+    >
+      <Text className="mb-1 text-2xl font-bold text-text-primary dark:text-text-primary">
         Set Daily Limits
       </Text>
-      <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+      <Text className="mb-4 text-sm text-text-secondary dark:text-text-secondary">
         Enter time limits (e.g., "1h 30m", "90m", "2h")
       </Text>
 
@@ -205,69 +190,9 @@ export default function LimitsScreen() {
             onLimitChange={handleLimitChange}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingBottom: 16 }}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  limitItem: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  appInfo: {
-    marginBottom: 12,
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  usageText: {
-    fontSize: 14,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 16,
-  },
-  clearButton: {
-    padding: 12,
-  },
-  clearButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 48,
-  },
-});
-

@@ -1,8 +1,49 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": ["jest"],
+    "types": [
+      "jest",
+      "nativewind/types"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@/design-system": [
+        "src/design-system"
+      ],
+      "@/design-system/*": [
+        "src/design-system/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/features/*": [
+        "src/features/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/stores/*": [
+        "src/stores/*"
+      ],
+      "@/native/*": [
+        "src/native/*"
+      ],
+      "@/navigation/*": [
+        "src/navigation/*"
+      ]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "*.css",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/Pods"
+  ]
 }
